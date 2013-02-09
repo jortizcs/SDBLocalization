@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" android:baselineAligned="false" android:orientation="vertical">
+    <LinearLayout android:id="@+id/linearLayout1" android:layout_height="wrap_content" android:layout_width="match_parent" android:orientation="horizontal">
+        <TextView android:text="Current Location: " android:id="@+id/currLocLabel" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <TextView android:text="Location" android:id="@+id/currLoc" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+    </LinearLayout>
+    <Button android:text="Change Current Location" android:id="@+id/changeCurrLoc" android:layout_width="match_parent" android:layout_height="wrap_content"></Button>
+    <TextView android:text=" " android:id="@+id/spacer1" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+    <LinearLayout android:id="@+id/linearLayout2" android:layout_height="wrap_content" android:layout_width="match_parent" android:orientation="horizontal">
+        <TextView android:text="Meter ID: " android:id="@+id/meterIdLabel" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+        <AutoCompleteTextView android:text="" android:id="@+id/meterId" android:layout_width="match_parent" android:layout_height="wrap_content"></AutoCompleteTextView>
+    </LinearLayout>
+    <!-- <Spinner android:layout_height="wrap_content" android:id="@+id/resType" android:layout_width="150dip" android:layout_gravity="center"></Spinner>-->
+    <Button android:text="Scan QR Code" android:id="@+id/scanQrc" android:layout_width="match_parent" android:layout_height="wrap_content"></Button>
+    <TextView android:text=" " android:id="@+id/spacer6" android:layout_width="wrap_content" android:layout_height="wrap_content"></TextView>
+    <TextView android:layout_height="wrap_content" android:id="@+id/note" android:text="New meter will be added inside current location" android:layout_width="match_parent" android:layout_gravity="center_vertical"></TextView>
+        
+    
+
+
+</LinearLayout>
