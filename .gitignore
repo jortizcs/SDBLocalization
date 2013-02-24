@@ -4,3 +4,7 @@
 *.jar
 *.war
 *.ear
+
+# Python Compiled Files#
+*.pyc
+*.pyo
