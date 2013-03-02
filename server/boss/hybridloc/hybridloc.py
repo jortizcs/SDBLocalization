@@ -22,6 +22,7 @@ def localize(userId):
   
   Return tuple (building id, (x, y, z), confidence)'''
   ipAddr = user.get_wifichip_ipaddr(userId)
+  wifiloc.update_db()
   hybridLoc = wifiloc.localize(ipAddr)
   return hybridLoc
 

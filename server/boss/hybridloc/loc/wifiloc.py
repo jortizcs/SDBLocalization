@@ -12,6 +12,7 @@ Copyright (c) 2013 UC Berkeley. All rights reserved.
 __all__ = ["localize", "update_db"]
 
 
+import os
 import sqlite3
 
 
@@ -58,8 +59,76 @@ def _get_coordinate(loc):
 
 def update_db():
   '''Update WiFi RSSI fingerprint database.'''
+  locdbconn = sqlite3.connect(os.path.dirname(__file__) + "/loc.db")
+  locdbc = locdbconn.cursor()
+  
+  wifitablename = "wifi"
+  locdbc.execute("CREATE TABLE IF NOT EXISTS " + wifitablename + 
+                 ''' (timestamp text, building text, room text, object text, 
+                 x real, y real, signature text, 
+                 PRIMARY KEY (timestamp, building))''')
   # TODO: update from phone rather than local files
-  pass
+  directory = os.path.dirname(__file__) + "/tmpdata/wifiloc/"
+  configfilename = directory + "Config.csv"
+  # use 'U' for universal newlines
+  configfile = open(configfilename, 'rU')
+  # list of tuple 
+  # (filename, timestamp, building, room, object, x, y, purpose, smartphone)
+  fileinfos = [tuple(fileinfo.split(",")) for fileinfo in configfile]
+  for fileinfo in fileinfos:
+    f = open(directory + fileinfo[0])
+    siginfos = _get_signatures_from_file(f, float("infinity"))
+    for sig, timestamp in siginfos:
+      try:
+        locdbc.execute("INSERT INTO " + wifitablename + " VALUES (?,?,?,?,?,?,?)"
+                      , (timestamp,)+fileinfo[2:7]+(sig,))
+      except sqlite3.IntegrityError:
+        pass
+  locdbconn.commit()
+  locdbconn.close()
+
+
+def _get_signatures_from_file(file, maxnum):
+  '''Get WiFi signatures from a text log file.
+  
+  Return list of tuple of (sig, timestamp), both of which are string'''
+  siginfos = []
+  records = file.readlines()
+  if len(records) > 0:
+    currecord = records[0]
+    if currecord.count(';') >= 2:
+      for i in range(1, len(records)): # ignore last line because it can be incomplete
+        nextrecord = records[i]
+        itemlist = currecord.split("#")[0].split(";")
+        (timestamp, des) = itemlist[0:2]  #timestamp, description
+        if des == "metadata_log_format":
+          if len(itemlist) == 2:  # this record is not complete
+            break
+          logformat = itemlist[2]
+          if int(logformat) == 3:  # nanosecond timing
+            mag = 6  # magnitude to millisecond
+          else:
+            raise ValueError("Cannot recognize log format %s in file %s"
+                             % (logformat, file.name))
+        elif des.find("wifi") != -1:
+          if len(itemlist) == 2:  # this record is not complete
+            break
+          ## TODO: SSID contains no ?, ", $, [, \, ], +
+          ## But currently we assume SSID has no ' ', and we use ' ' to
+          ## separate different SSID records
+          #wifirecords = itemlist[2].split(' ')
+          ## list of (mac, ssid, rssi)
+          #sig = [tuple(r.split(",")) for r in wifirecords]
+          sig = itemlist[2]
+          #sigs.append(sig);
+          #timestamps.append(timestamp/(10^(mag + 3)));
+          siginfos.append((sig, timestamp))
+          if len(siginfos) >= maxnum:
+            break
+        else:
+          pass
+        currecord = nextrecord
+  return siginfos
 
 
 def _test():
