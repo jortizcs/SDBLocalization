@@ -14,90 +14,156 @@ __all__ = ["localize", "update_db"]
 
 import os
 import sqlite3
+import numpy
+import collections
 
 
 def localize(ipAddr):
   '''Localize user using WiFi RSSI fingerprints database and WiFi RSSI 
   signature from IP address ipAddr.
   
-  Return tuple (building id, (x, y, z), confidence)'''
-  sig = _get_signature(ipAddr)
-  loc = _find_knn(sig)
-  confidence = _get_confidence(loc, sig)
-  (buildingId, (x, y, z)) = _get_coordinate(loc)
+  Return tuple ((building, (x, y, z)), confidence)'''
+  _, sigstr = _get_sig_item_from_ip(ipAddr)
+  locs, _ = _find_knn(sigstr, 10)
+  confidence = _get_confidence(locs, sigstr)
+  (building, (x, y, z)) = _get_coordinate(locs)
   
-  return (buildingId, (x, y, z), confidence)
+  return ((building, (x, y, z)), confidence)
 
 
-def _get_signature(ipAddr):
-  '''Get WiFi RSSI signature from WiFi chip with IP address ipAddr.
+def _get_sig_item_from_ip(ipAddr):
+  '''Get one WiFi RSSI signature item from WiFi chip with IP address ipAddr.
   
-  Return list of (MAC Address, RSSI)'''
-  return [("FF:FF:FF:FF:FF:FF", -60)]
+  Return tuple of (timestamp, sigstr), both of which are strings'''
+  return ("1354058706884971435", 
+          "00:22:90:39:07:12,UNKNOWN,-77 00:17:df:a7:4c:f2,UNKNOWN,-81 dc:7b:94:35:25:02,UNKNOWN,-90 00:17:df:a7:33:12,UNKNOWN,-92 00:22:90:39:07:15,UNKNOWN,-79 00:17:df:a7:4c:f5,UNKNOWN,-79 dc:7b:94:35:25:05,UNKNOWN,-90 00:17:df:a7:33:15,UNKNOWN,-92 00:22:90:39:07:11,UNKNOWN,-77 00:22:90:39:07:16,UNKNOWN,-79 00:17:df:a7:4c:f6,UNKNOWN,-79 00:17:df:a7:4c:f0,UNKNOWN,-79 00:22:90:39:07:10,UNKNOWN,-80 00:17:df:a7:4c:f1,UNKNOWN,-81 dc:7b:94:35:25:01,UNKNOWN,-89 dc:7b:94:35:25:00,UNKNOWN,-91 00:17:df:a7:33:16,UNKNOWN,-91 00:17:df:a7:33:11,UNKNOWN,-92 dc:7b:94:35:25:06,UNKNOWN,-93 00:22:90:39:70:a1,UNKNOWN,-93")
 
 
-def _find_knn(sig):
+def _find_knn(sigstr, k):
   '''Find k-nearest neighbor of sigature in database
   
-  Return list of (building id, (x, y, z))'''
-  return [(0, (0, 0, 0))]
+  Return tuple (list of (building, (x, y, z)), list of signature distance), 
+  with each list length max(k, dbsize)'''
+  # TODO: speed bottleneck, try to improve speed!
+  locdbname = "loc.db"
+  locdbconn = sqlite3.connect(os.path.dirname(__file__) + "/" + locdbname)
+  locdbc = locdbconn.cursor()
+
+  #distitem format: ((building, (x, y, z)), signature distance)
+  distitems = []
+  wifitablename = "wifi"
+  #sigrecord format: (timestamp, building, room, object, x, y, z, signature)
+  for sigrecord in locdbc.execute("SELECT * FROM " + wifitablename):
+    dbsigstr = sigrecord[-1]
+    dist = _get_sig_dist(sigstr, dbsigstr)
+    distitems.append(((sigrecord[1], sigrecord[4:7]), dist))
+  
+  distitems.sort(key=lambda distitem:distitem[1])
+  
+  return zip(*distitems[0:k])
 
 
-def _get_confidence(loc, sig):
+def _get_sig_dist(sigstr1, sigstr2):
+  '''Get signature list form signature string.
+  
+  Return list of (MAC:RSSI)'''
+  dftminrssi = -150  # default minimum RSSI
+  siglist1 = _get_sig_list(sigstr1)
+  siglist2 = _get_sig_list(sigstr2)
+  maclist1 = zip(*siglist1)[0]
+  maclist2 = zip(*siglist2)[0]
+  siglist1.extend([(mac, dftminrssi) for mac in maclist2 if mac not in maclist1])
+  siglist2.extend([(mac, dftminrssi) for mac in maclist1 if mac not in maclist2])
+  siglist1.sort(key=lambda sample:sample[0])  # sort by MAC address
+  siglist2.sort(key=lambda sample:sample[0])
+  rssilist1 = map(int, zip(*siglist1)[1])
+  rssilist2 = map(int, zip(*siglist2)[1])
+  rssiarray1 = numpy.array(rssilist1)
+  rssiarray2 = numpy.array(rssilist2)
+  dist = numpy.linalg.norm(rssiarray1-rssiarray2)/numpy.sqrt(len(rssilist1))
+  
+  return dist
+
+
+def _get_sig_list(sigstr):
+  '''Get signature list form signature string.
+  
+  Return list of (MAC:RSSI)'''
+  # rssisample format: (MAC Address, SSID, RSSI)
+  rssisamples = sigstr.split(" ")
+  macs = [sample.split(",")[0] for sample in rssisamples]
+  rssis = [sample.split(",")[2] for sample in rssisamples]  # Received Signal Strength Indexes
+  siglist = zip(macs, rssis)
+  
+  return siglist
+
+
+def _get_confidence(locs, sigstr):
   '''Get confidence based on the localization and signature.
   
   Return float of confidence in range [0.0, 1.0]'''
   return 1.0
 
 
-def _get_coordinate(loc):
-  '''Get location coordinate based on k-nearest neighbors loc.
+def _get_coordinate(locs):
+  '''Get location coordinate based on k-nearest neighbors locations.
   
-  Return tuple (buildingId, (x, y, z))'''
-  return (0, (0, 0, 0))
+  Return tuple (building, (x, y, z))'''
+  buildings = zip(*locs)[0]
+  building = collections.Counter(buildings).most_common(1)[0][0]
+  coordinates = zip(*locs)[1]
+  coordinate = tuple([sum(x)/len(x) for x in zip(*coordinates)])
+  return (building, coordinate)
 
 
 def update_db():
   '''Update WiFi RSSI fingerprint database.'''
-  locdbconn = sqlite3.connect(os.path.dirname(__file__) + "/loc.db")
+  locdbname = "loc.db"
+  locdbconn = sqlite3.connect(os.path.dirname(__file__) + "/" + locdbname)
   locdbc = locdbconn.cursor()
   
   wifitablename = "wifi"
   locdbc.execute("CREATE TABLE IF NOT EXISTS " + wifitablename + 
                  ''' (timestamp text, building text, room text, object text, 
-                 x real, y real, signature text, 
+                 x real, y real, z real, signature text, 
                  PRIMARY KEY (timestamp, building))''')
   # TODO: update from phone rather than local files
   directory = os.path.dirname(__file__) + "/tmpdata/wifiloc/"
   configfilename = directory + "Config.csv"
   # use 'U' for universal newlines
   configfile = open(configfilename, 'rU')
-  # list of tuple 
-  # (filename, timestamp, building, room, object, x, y, purpose, smartphone)
+  # list of tuple of sigrecord:
+  # (filename, timestamp, building, room, object, x, y, z, purpose, smartphone)
   fileinfos = [tuple(fileinfo.split(",")) for fileinfo in configfile]
   for fileinfo in fileinfos:
-    f = open(directory + fileinfo[0])
-    siginfos = _get_signatures_from_file(f, float("infinity"))
-    for sig, timestamp in siginfos:
-      try:
-        locdbc.execute("INSERT INTO " + wifitablename + " VALUES (?,?,?,?,?,?,?)"
-                      , (timestamp,)+fileinfo[2:7]+(sig,))
-      except sqlite3.IntegrityError:
-        pass
+    if fileinfo[8] == "Train":
+      f = open(directory + fileinfo[0])
+      #sigitem format: (timestamp string, signature string)
+      sigitems = _get_sig_items_from_file(f, float("infinity"))
+      for timestamp, sigstr in sigitems:
+        try:
+          #sigrecord format: (timestamp, building, room, object, x, y, z, signature)
+          sigrecord = (timestamp,) + fileinfo[2:8] + (sigstr,)
+          locdbc.execute("INSERT INTO "+wifitablename+" VALUES (?,?,?,?,?,?,?,?)"
+                        , sigrecord)
+        except sqlite3.IntegrityError:
+          pass
   locdbconn.commit()
   locdbconn.close()
 
 
-def _get_signatures_from_file(file, maxnum):
-  '''Get WiFi signatures from a text log file.
+def _get_sig_items_from_file(file, maxnum):
+  '''Get WiFi signatures items from a text log file.
   
-  Return list of tuple of (sig, timestamp), both of which are string'''
-  siginfos = []
+  Return list of tuple of sigitem (timestamp, sigstr), 
+  both of which are strings'''
+  #sigitem format: (timestamp string, signature string)
+  sigitems = []
   records = file.readlines()
   if len(records) > 0:
     currecord = records[0]
     if currecord.count(';') >= 2:
-      for i in range(1, len(records)): # ignore last line because it can be incomplete
+      for i in range(1, len(records)): #last line may be incomplete
         nextrecord = records[i]
         itemlist = currecord.split("#")[0].split(";")
         (timestamp, des) = itemlist[0:2]  #timestamp, description
@@ -116,19 +182,14 @@ def _get_signatures_from_file(file, maxnum):
           ## TODO: SSID contains no ?, ", $, [, \, ], +
           ## But currently we assume SSID has no ' ', and we use ' ' to
           ## separate different SSID records
-          #wifirecords = itemlist[2].split(' ')
-          ## list of (mac, ssid, rssi)
-          #sig = [tuple(r.split(",")) for r in wifirecords]
-          sig = itemlist[2]
-          #sigs.append(sig);
-          #timestamps.append(timestamp/(10^(mag + 3)));
-          siginfos.append((sig, timestamp))
-          if len(siginfos) >= maxnum:
+          sigstr = itemlist[2].split(" \n")[0]
+          sigitems.append((timestamp, sigstr))
+          if len(sigitems) >= maxnum:
             break
         else:
           pass
         currecord = nextrecord
-  return siginfos
+  return sigitems
 
 
 def _test():
