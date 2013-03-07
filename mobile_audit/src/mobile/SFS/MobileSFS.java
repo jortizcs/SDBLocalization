@@ -18,6 +18,7 @@ import android.content.SharedPreferences;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import java.util.Vector;
 
 
@@ -57,8 +58,14 @@ public class MobileSFS extends Activity {
 		});
         
         ListView listView = (ListView) findViewById(R.id.listView);
-        listView.setAdapter(new ArrayAdapter<String>(this, R.layout.listitem, new String[] {"Update Deployment State", "Scan To View Services", "Scan Deployment Info QR-Code",
-        																					"Deployment Info"}));
+        //listView.setAdapter(new ArrayAdapter<String>(this, R.layout.listitem, new String[] {"Update Deployment State", "Scan To View Services", "Scan Deployment Info QR-Code",
+        //																					"Deployment Info"}));
+        String[] strList = new String[] {"Update Deployment State", 
+        								"Scan To View Services", 
+        								"Scan Deployment Info QR-Code",
+        								"Deployment Info",
+        								"HybridLoc"};
+        listView.setAdapter(new ArrayAdapter<String>(this, R.layout.listitem, strList));
         //listView.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, new String[] {"Update Hierarchy", "View Services"}));
         
         TXM.initTXM(getApplicationContext());
@@ -104,6 +111,12 @@ public class MobileSFS extends Activity {
 							displayMsg(msgBuf.toString());
 				    	}
 						break;
+					case 4:
+					    intent = new Intent(MobileSFS.this, HybridLoc.class);
+				        startActivity(intent);
+				        break;
+			        default:
+				        break;
 				}
 				
 				//intent.putExtra("curr_loc", currLocString);

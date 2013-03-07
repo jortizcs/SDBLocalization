@@ -82,5 +82,8 @@
 				<action android:name="android.intent.action.MAIN" />
 			</intent-filter>
 		</activity>
+		<activity android:name=".HybridLoc"
+                  android:label="@string/app_name">
+        </activity>
     </application>
 </manifest>

@@ -21,14 +21,16 @@ public final class R {
         public static final int currLocLabel=0x7f050001;
         public static final int currentDraw=0x7f050011;
         public static final int delete=0x7f050021;
+        public static final int hybridloc=0x7f050022;
         public static final int item=0x7f050017;
         public static final int itemLabel=0x7f050016;
         public static final int linearLayout1=0x7f050000;
         public static final int linearLayout2=0x7f050005;
         public static final int linearLayout3=0x7f05000e;
         public static final int linearLayout4=0x7f05001a;
-        public static final int listItem=0x7f050022;
-        public static final int listView=0x7f050023;
+        public static final int listItem=0x7f050024;
+        public static final int listView=0x7f050025;
+        public static final int locate_me=0x7f050023;
         public static final int meter=0x7f050019;
         public static final int meterId=0x7f050007;
         public static final int meterIdLabel=0x7f050006;
@@ -50,7 +52,7 @@ public final class R {
         public static final int spacer4=0x7f050015;
         public static final int spacer5=0x7f05001c;
         public static final int spacer6=0x7f050009;
-        public static final int webView=0x7f050024;
+        public static final int webView=0x7f050026;
     }
     public static final class layout {
         public static final int addmeter=0x7f030000;
@@ -59,14 +61,18 @@ public final class R {
         public static final int bind=0x7f030003;
         public static final int changelocation=0x7f030004;
         public static final int delete=0x7f030005;
-        public static final int listitem=0x7f030006;
-        public static final int main=0x7f030007;
-        public static final int mobilesfs=0x7f030008;
-        public static final int updatehierarchy=0x7f030009;
-        public static final int viewservices=0x7f03000a;
+        public static final int hybridloc=0x7f030006;
+        public static final int listitem=0x7f030007;
+        public static final int main=0x7f030008;
+        public static final int mobilesfs=0x7f030009;
+        public static final int updatehierarchy=0x7f03000a;
+        public static final int viewservices=0x7f03000b;
     }
     public static final class string {
         public static final int app_name=0x7f040001;
         public static final int hello=0x7f040000;
+        public static final int hybridloc=0x7f040002;
+        public static final int locate_me=0x7f040004;
+        public static final int map=0x7f040003;
     }
 }

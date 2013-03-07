@@ -2,4 +2,7 @@
 <resources>
     <string name="hello">Hello World!</string>
     <string name="app_name">Mobile auditing application</string>
+    <string name="hybridloc">HybridLoc</string>
+    <string name="map">map</string>
+    <string name="locate_me">Locate Me!</string>
 </resources>
