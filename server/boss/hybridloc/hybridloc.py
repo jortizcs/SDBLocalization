@@ -16,15 +16,16 @@ from boss.hybridloc.loc import wifiloc
 from boss import user
 
 
-def localize(userId):
+def localize(request):
   '''Execute hybridLoc localization service, which fuses results of multiple 
   localization services.
   
   Return tuple (building id, (x, y, z), confidence)'''
-  ipAddr = user.get_wifichip_ipaddr(userId)
+  wifisigstr = request["data"]["wifi"]["sigstr"]
   wifiloc.update_db()
-  hybridLoc = wifiloc.localize(ipAddr)
-  return hybridLoc
+  wifilocation, wificonf = wifiloc.localize(wifisigstr)
+  hybridlocation = wifilocation
+  return hybridlocation
 
 
 def _test():

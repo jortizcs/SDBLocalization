@@ -18,25 +18,16 @@ import numpy
 import collections
 
 
-def localize(ipAddr):
+def localize(sigstr):
   '''Localize user using WiFi RSSI fingerprints database and WiFi RSSI 
-  signature from IP address ipAddr.
+  signature from signature.
   
   Return tuple ((building, (x, y, z)), confidence)'''
-  _, sigstr = _get_sig_item_from_ip(ipAddr)
   locs, _ = _find_knn(sigstr, 10)
   confidence = _get_confidence(locs, sigstr)
   (building, (x, y, z)) = _get_coordinate(locs)
   
   return ((building, (x, y, z)), confidence)
-
-
-def _get_sig_item_from_ip(ipAddr):
-  '''Get one WiFi RSSI signature item from WiFi chip with IP address ipAddr.
-  
-  Return tuple of (timestamp, sigstr), both of which are strings'''
-  return ("1354058706884971435", 
-          "00:22:90:39:07:12,UNKNOWN,-77 00:17:df:a7:4c:f2,UNKNOWN,-81 dc:7b:94:35:25:02,UNKNOWN,-90 00:17:df:a7:33:12,UNKNOWN,-92 00:22:90:39:07:15,UNKNOWN,-79 00:17:df:a7:4c:f5,UNKNOWN,-79 dc:7b:94:35:25:05,UNKNOWN,-90 00:17:df:a7:33:15,UNKNOWN,-92 00:22:90:39:07:11,UNKNOWN,-77 00:22:90:39:07:16,UNKNOWN,-79 00:17:df:a7:4c:f6,UNKNOWN,-79 00:17:df:a7:4c:f0,UNKNOWN,-79 00:22:90:39:07:10,UNKNOWN,-80 00:17:df:a7:4c:f1,UNKNOWN,-81 dc:7b:94:35:25:01,UNKNOWN,-89 dc:7b:94:35:25:00,UNKNOWN,-91 00:17:df:a7:33:16,UNKNOWN,-91 00:17:df:a7:33:11,UNKNOWN,-92 dc:7b:94:35:25:06,UNKNOWN,-93 00:22:90:39:70:a1,UNKNOWN,-93")
 
 
 def _find_knn(sigstr, k):
