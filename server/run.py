@@ -27,11 +27,22 @@ def main():
   
   while True:
     conn, addr = sock.accept()
-    request = json.loads(conn.recv(1024))  #Ahhh, ugly
+    requestStr = conn.recv(1024)
+    try:
+      request = json.loads(requestStr)  #Ahhh, ugly
+    except:
+      conn.close()
+      continue
+      
     if request["type"] == "localization":
       loc = hybridloc.localize(request)
-      conn.sendall(json.dumps(loc))
       print loc
+      try:
+        conn.sendall(json.dumps(loc))
+      except:
+        pass
+    
+    conn.close()
 
 
 if __name__ == '__main__':

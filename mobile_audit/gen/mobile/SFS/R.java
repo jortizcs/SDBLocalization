@@ -28,9 +28,11 @@ public final class R {
         public static final int linearLayout2=0x7f050005;
         public static final int linearLayout3=0x7f05000e;
         public static final int linearLayout4=0x7f05001a;
-        public static final int listItem=0x7f050024;
-        public static final int listView=0x7f050025;
-        public static final int locate_me=0x7f050023;
+        public static final int listItem=0x7f050026;
+        public static final int listView=0x7f050027;
+        public static final int locate_me=0x7f050025;
+        public static final int location=0x7f050023;
+        public static final int map=0x7f050024;
         public static final int meter=0x7f050019;
         public static final int meterId=0x7f050007;
         public static final int meterIdLabel=0x7f050006;
@@ -52,7 +54,7 @@ public final class R {
         public static final int spacer4=0x7f050015;
         public static final int spacer5=0x7f05001c;
         public static final int spacer6=0x7f050009;
-        public static final int webView=0x7f050026;
+        public static final int webView=0x7f050028;
     }
     public static final class layout {
         public static final int addmeter=0x7f030000;
