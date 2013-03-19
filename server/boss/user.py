@@ -22,9 +22,9 @@ import sqlite3
 
 
 def get_wifichip_ipaddr(userId):
-  '''Look up user WiFi chip IP address from user manager.
+  """Look up user WiFi chip IP address from user manager.
   
-  Return string of IP address'''
+  Return string of IP address"""
   
   return '127.0.0.1'
 
