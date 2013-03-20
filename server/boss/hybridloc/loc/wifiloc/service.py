@@ -27,8 +27,8 @@ class WifiLocService(object):
     self._db = db
     self._lc = task.LoopingCall(self._update_db)
     self._lc.start(dbupdate_interval)
-    
-  
+
+
   def localize(self, request):
     """Localize user using WiFi RSSI fingerprints database and WiFi RSSI 
     signature from signature.
@@ -41,33 +41,16 @@ class WifiLocService(object):
     return d
 
 
+  @defer.inlineCallbacks
   def _find_knn(self, sigstr, k):
     """Find k-nearest neighbor of sigature in database
   
     Return tuple (list of (building, (x, y, z)), list of signature distance), 
     with each list length max(k, dbsize)"""
-    d = self._read_db()
-    d.addCallback(self._db_returned, sigstr = sigstr, k = k)
-    
-    return d
-
-
-  def _knn_found(self, distitems, sigstr):
-    locs, _ = distitems
-    (building, (x, y, z)) = self._get_coordinate(locs)
-    confidence = self._get_confidence(locs, sigstr)
-  
-    return ((building, (x, y, z)), confidence)
-
-
-  def _read_db(self):
     operation = "SELECT * FROM " + self._wifitablename
     d = self._db.runQuery(operation)
-    
-    return d
+    dbsigrecords = yield d
 
-
-  def _db_returned(self, dbsigrecords, sigstr, k):
     # TODO speed bottleneck, try to improve speed!
     #distitem format: ((building, (x, y, z)), signature distance)
     distitems = []
@@ -79,7 +62,15 @@ class WifiLocService(object):
       
     distitems.sort(key=lambda distitem:distitem[1])
     
-    return zip(*distitems[0:k])
+    defer.returnValue(zip(*distitems[0:k]))
+
+
+  def _knn_found(self, distitems, sigstr):
+    locs, _ = distitems
+    (building, (x, y, z)) = self._get_coordinate(locs)
+    confidence = self._get_confidence(locs, sigstr)
+  
+    return ((building, (x, y, z)), confidence)
 
 
   def _get_sig_dist(self, sigstr1, sigstr2):
@@ -134,9 +125,11 @@ class WifiLocService(object):
     coordinate = tuple([sum(x)/len(x) for x in zip(*coordinates)])
     return (building, coordinate)
 
+
   @defer.inlineCallbacks
   def _update_db(self):
     """Update WiFi RSSI fingerprint database."""
+    print "Updating database ..."
     operation = "CREATE TABLE IF NOT EXISTS " + self._wifitablename + \
                 " (timestamp text, building text, room text, object text, \
                    x real, y real, z real, signature text, \
@@ -165,6 +158,7 @@ class WifiLocService(object):
             yield self._db.runQuery(operation, sigrecord)
           except sqlite3.IntegrityError:
             pass
+    print "Done!"
 
 
   def _get_sig_items_from_file(self, file, maxnum):

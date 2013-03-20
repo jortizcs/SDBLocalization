@@ -5,12 +5,15 @@
       user.py
       hybridloc\
         __init__.py
-        hybridloc.py
+        service.py
+        site.py
         loc\
           __init__.py
-          wifiloc.py
-          absloc.py
-          imuloc.py
+          wifiloc\
+            __init__.py
+            service.py
+          absloc\
+          imuloc\
 
 ## Notes
 - Make sure to conform to "[PEP 8 -- Style Guide for Python Code](http://www.python.org/dev/peps/pep-0008/)" and "[Google Python Style Guide](http://google-styleguide.googlecode.com/svn/trunk/pyguide.html)" when coding

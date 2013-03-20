@@ -12,7 +12,8 @@ Copyright (c) 2013 UC Berkeley. All rights reserved.
 
 import httplib
 import json
-
+import time
+import threading
 
 def _test():
   HOST = '127.0.0.1'
@@ -30,7 +31,11 @@ def _test():
   resp = conn.getresponse()
   
   print resp.read()
+  
+  print time.ctime()
+  threading.Timer(1, _test).start()
 
 
 if __name__ == '__main__':
   _test()
+  

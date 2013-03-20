@@ -36,20 +36,19 @@ class LocalizeResource(resource.Resource):
 
   def render_POST(self, request):
     """POST localization request"""
-    self.request = request
-    self.request.setHeader('Content-type', 'application/json')
+    request.setHeader('Content-type', 'application/json')
     # TODO handle bad request
-    content = json.load(self.request.content)
+    content = json.load(request.content)
     d = self.service.localize(content)
-    d.addCallback(self._respond)
+    d.addCallback(self._respond, request)
     
     return server.NOT_DONE_YET
     
-  def _respond(self, loc):
+  def _respond(self, loc, request):
     print loc
-    self.request.setResponseCode(httplib.OK)
-    self.request.write(json.dumps(loc))
-    self.request.finish()
+    request.setResponseCode(httplib.OK)
+    request.write(json.dumps(loc))
+    request.finish()
 
 
 class RootResource(resource.Resource):
@@ -76,9 +75,10 @@ def get_site():
   contents = ['localize']
   root = RootResource(contents=contents)
   
-  dbname = "loc"
-  dbpool = adbapi.ConnectionPool('sqlite3', dbname)
-  dbupdate_interval = 10  # Database update interval in second
+  dbname = "loc.db"
+  dbpool = adbapi.ConnectionPool('sqlite3', database = dbname, 
+                                 check_same_thread=False)
+  dbupdate_interval = 3600  # Database update interval in second
   wifiloc_service = WifiLocService(dbpool, dbupdate_interval)
   root.putChild('localize', LocalizeResource(HybridLocService(wifiloc_service)))
 
