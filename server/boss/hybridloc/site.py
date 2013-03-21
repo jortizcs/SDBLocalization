@@ -21,31 +21,33 @@ import httplib
 
 class LocalizeResource(resource.Resource):
   """Resource representing localization service."""
-  
-  def __init__(self, service):
-    self.service = service    
+  def __init__(self, locservice):
+    self._locservice = locservice    
     resource.Resource.__init__(self)
-    
+  
+  
   def getChild(self, name, request):
     if name == '':
         return self
     return resource.Resource.getChild(self, name, request)
-
+  
+  
   def render_GET(self, request):
     return "POST JSON to me!"
-
+  
+  
   def render_POST(self, request):
     """POST localization request"""
     request.setHeader('Content-type', 'application/json')
     # TODO handle bad request
     content = json.load(request.content)
-    d = self.service.localize(content)
+    d = self._locservice.localize(content)
     d.addCallback(self._respond, request)
     
     return server.NOT_DONE_YET
-    
+  
+  
   def _respond(self, loc, request):
-    print loc
     request.setResponseCode(httplib.OK)
     request.write(json.dumps(loc))
     request.finish()
@@ -56,22 +58,24 @@ class RootResource(resource.Resource):
   def __init__(self, value=None, contents=['localize']):
     resource.Resource.__init__(self)
     if value:
-      self.value = value
+      self._value = value
     else:
-      self.value = {'Contents' : contents}
-
+      self._value = {'Contents' : contents}
+  
+  
   def getChild(self, name, request):
     if name == '':
         return self
-    return resource.Resource.getChild(self, name, request) 
-
+    return resource.Resource.getChild(self, name, request)
+  
+  
   def render_GET(self, request):
     request.setHeader('Content-type', 'application/json')
-    return json.dumps(self.value)
+    return json.dumps(self._value)
 
 
 def get_site():
-  """Retuen HybridLoc Site (HTTPFactory)"""
+  """Return HybridLoc Site (HTTPFactory)"""
   contents = ['localize']
   root = RootResource(contents=contents)
   
@@ -81,7 +85,7 @@ def get_site():
   dbupdate_interval = 3600  # Database update interval in second
   wifiloc_service = WifiLocService(dbpool, dbupdate_interval)
   root.putChild('localize', LocalizeResource(HybridLocService(wifiloc_service)))
-
+  
   site = server.Site(root)
   return site
 
