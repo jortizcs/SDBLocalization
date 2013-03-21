@@ -1,30 +1,37 @@
 package mobile.SFS;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.net.UnknownHostException;
 
-import android.annotation.TargetApi;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.ParseException;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
+
 import android.app.Activity;
+import android.net.wifi.ScanResult;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
-public class HybridLoc extends Activity {
+public class HybridLoc extends Activity implements WifiScanner.Listener {
+
+	private static final String UNKNOWN_SSID = "UNKNOWN";
+	private String latestSigStr = "";
 	
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.hybridloc);
+        
+        // start up the wifi scanner
+        WifiScanner.addListener(getApplicationContext(), this);
     }
 
     @Override
@@ -45,6 +52,7 @@ public class HybridLoc extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        WifiScanner.removeListener(this);
     }
 
     @Override
@@ -64,64 +72,80 @@ public class HybridLoc extends Activity {
     	new LocalizeTask().execute();
     }
     
-    @TargetApi(Build.VERSION_CODES.CUPCAKE)
+    @Override
+    public void onScanResult(List<ScanResult> results) {
+    	String newSigStr = "";
+        for (ScanResult sr : results) {
+        	newSigStr += sr.BSSID + "," + UNKNOWN_SSID + "," + sr.level + " ";
+        }
+
+        latestSigStr = newSigStr.trim();
+        
+        //Toast.makeText(getApplicationContext(), latestSigStr, Toast.LENGTH_LONG).show();
+    }
+    
 	private class LocalizeTask extends AsyncTask<Void, Void, String> {
     	@Override
         protected String doInBackground(Void...values) {
     		String locationStr = "";
     		 
         	//get signature
-        	String requestStr = "{\"data\": {\"wifi\": {\"timestamp\": \"1354058706884971435\", \"sigstr\": \"00:22:90:39:07:12,UNKNOWN,-77 00:17:df:a7:4c:f2,UNKNOWN,-81 dc:7b:94:35:25:02,UNKNOWN,-90 00:17:df:a7:33:12,UNKNOWN,-92 00:22:90:39:07:15,UNKNOWN,-79 00:17:df:a7:4c:f5,UNKNOWN,-79 dc:7b:94:35:25:05,UNKNOWN,-90 00:17:df:a7:33:15,UNKNOWN,-92 00:22:90:39:07:11,UNKNOWN,-77 00:22:90:39:07:16,UNKNOWN,-79 00:17:df:a7:4c:f6,UNKNOWN,-79 00:17:df:a7:4c:f0,UNKNOWN,-79 00:22:90:39:07:10,UNKNOWN,-80 00:17:df:a7:4c:f1,UNKNOWN,-81 dc:7b:94:35:25:01,UNKNOWN,-89 dc:7b:94:35:25:00,UNKNOWN,-91 00:17:df:a7:33:16,UNKNOWN,-91 00:17:df:a7:33:11,UNKNOWN,-92 dc:7b:94:35:25:06,UNKNOWN,-93 00:22:90:39:70:a1,UNKNOWN,-93\"}, \"ABS\": \"\"}, \"type\": \"localization\"}";
+        	String requestStr = "{\"data\": " +
+        							"{\"wifi\": " +
+        								"{\"timestamp\": \"1354058706884971435\", " +
+        								"\"sigstr\": \""+latestSigStr+"\"}, " +
+        							"\"ABS\": \"\"}, " +
+        						"\"type\": \"localization\"}";
     		
     		// Connect to hybridLoc server with signature and wait for results
         	String HOST = "128.32.46.187";
-        	int PORT = 10000;
+        	Integer PORT = 10000;
+        	String service = "localize";
+        	String Url = "http://" + HOST + ":" + PORT.toString() + "/" + service;
         	
-        	Socket clientSock = null;
-        	PrintWriter out = null;
-         	BufferedReader in = null;
-        	try{
-        		clientSock = new Socket(HOST, PORT);
-        		
-        		out = new PrintWriter(clientSock.getOutputStream(), true);
-                in = new BufferedReader(new InputStreamReader(
-                		clientSock.getInputStream()));
-    		}
-    		catch(UnknownHostException e){
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    			System.exit(1);
-    		}
-    		catch(IOException e){
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    			System.exit(1);
-    		}
+        	//instantiates httpclient to make request
+            DefaultHttpClient httpclient = new DefaultHttpClient();
+
+            //url with the post data
+            HttpPost httppost = new HttpPost(Url);
+
+            //passes the results to a string builder/entity
+            StringEntity se = null;
+			try {
+				se = new StringEntity(requestStr);
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+            //sets the post request as the resulting string
+            httppost.setEntity(se);
+            //sets a request header so the page receving the request
+            //will know what to do with it
+            httppost.setHeader("Accept", "application/json");
+            httppost.setHeader("Content-type", "application/json");
+
+            //Handles what is returned from the page 
+            HttpResponse response = null;
+            try {
+			    response = httpclient.execute(httppost);
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	
-        	if (clientSock != null && out != null && in != null) {
-    	    	out.println(requestStr);
-    			out.flush();
-    			
-    			try {
-    				locationStr = (String)in.readLine();
-    			} catch (IOException e) {
-    				// TODO Auto-generated catch block
-    				e.printStackTrace();
-    				System.exit(1);
-    			}
-    			
-    			
-    			try {
-    				in.close();
-    				out.close();
-    				clientSock.close();
-    			} catch (IOException e) {
-    				// TODO Auto-generated catch block
-    				e.printStackTrace();
-    				System.exit(1);
-    			}
-    			
-        	}
+            try {
+				locationStr = EntityUtils.toString(response.getEntity(), "UTF-8");
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	
         	return locationStr;
         }
