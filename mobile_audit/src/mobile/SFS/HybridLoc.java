@@ -14,6 +14,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.net.wifi.ScanResult;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -23,15 +24,13 @@ import android.widget.TextView;
 public class HybridLoc extends Activity implements WifiScanner.Listener {
 
 	private static final String UNKNOWN_SSID = "UNKNOWN";
-	private String latestSigStr = "";
+	private String latestSigStr = null;
+	private boolean isLocating = false;
 	
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.hybridloc);
-        
-        // start up the wifi scanner
-        WifiScanner.addListener(getApplicationContext(), this);
     }
 
     @Override
@@ -46,6 +45,8 @@ public class HybridLoc extends Activity implements WifiScanner.Listener {
 
     @Override
     protected void onResume() {
+    	 // start up the wifi scanner
+        WifiScanner.addListener(getApplicationContext(), this);
         super.onResume();
     }
 
@@ -66,10 +67,14 @@ public class HybridLoc extends Activity implements WifiScanner.Listener {
     }
     
     public void localize(View view) {
-    	TextView locationTextView = (TextView)findViewById(R.id.location);
-    	locationTextView.setText("Localizing...");
-    	
-    	new LocalizeTask().execute();
+    	if (isLocating == false) {
+    		isLocating = true;
+    		
+	    	TextView locationTextView = (TextView)findViewById(R.id.location);
+	    	locationTextView.setText("Localizing...");
+	    	
+	    	new LocalizeTask().execute();
+    	}
     }
     
     @Override
@@ -80,19 +85,21 @@ public class HybridLoc extends Activity implements WifiScanner.Listener {
         }
 
         latestSigStr = newSigStr.trim();
-        
-        //Toast.makeText(getApplicationContext(), latestSigStr, Toast.LENGTH_LONG).show();
     }
     
 	private class LocalizeTask extends AsyncTask<Void, Void, String> {
     	@Override
         protected String doInBackground(Void...values) {
+    		if (latestSigStr == null){
+    			return "No WiFi signature fetched yet!";
+    		}
+    		
     		String locationStr = "";
     		 
         	//get signature
         	String requestStr = "{\"data\": " +
         							"{\"wifi\": " +
-        								"{\"timestamp\": \"1354058706884971435\", " +
+        								"{\"timestamp\": \"0\", " +
         								"\"sigstr\": \""+latestSigStr+"\"}, " +
         							"\"ABS\": \"\"}, " +
         						"\"type\": \"localization\"}";
@@ -114,8 +121,7 @@ public class HybridLoc extends Activity implements WifiScanner.Listener {
 			try {
 				se = new StringEntity(requestStr);
 			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				return "Unsupported Encoding when building StringEntity.";
 			}
 
             //sets the post request as the resulting string
@@ -130,21 +136,17 @@ public class HybridLoc extends Activity implements WifiScanner.Listener {
             try {
 			    response = httpclient.execute(httppost);
 			} catch (ClientProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				return "Cannot connect to server!";
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				return "Cannot connect to server!";
 			}
         	
             try {
 				locationStr = EntityUtils.toString(response.getEntity(), "UTF-8");
 			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				return "Server response error!";
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				return "Server response error!";
 			}
         	
         	return locationStr;
@@ -154,6 +156,8 @@ public class HybridLoc extends Activity implements WifiScanner.Listener {
         protected void onPostExecute(String locationStr) {
         	TextView locationTextView = (TextView)findViewById(R.id.location);
 			locationTextView.setText(locationStr);
+			
+			isLocating = false;
         }
     }
 }
