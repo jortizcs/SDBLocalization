@@ -10,6 +10,7 @@ Copyright (c) 2013 UC Berkeley. All rights reserved.
 """
 
 
+from twisted.internet import defer
 from twisted.web import resource, server
 from twisted.enterprise import adbapi
 
@@ -17,6 +18,7 @@ from boss.hybridloc.service import HybridLocService
 from boss.hybridloc.loc.wifiloc.service import WifiLocService
 import json
 import httplib
+import time
 
 
 class LocalizeResource(resource.Resource):
@@ -38,11 +40,18 @@ class LocalizeResource(resource.Resource):
   
   def render_POST(self, request):
     """POST localization request"""
+    print "[" + str(time.time()) +\
+          "] Received request from " + request.getHost().host
+    
     request.setHeader('Content-type', 'application/json')
     # TODO handle bad request
     content = json.load(request.content)
     d = self._locservice.localize(content)
     d.addCallback(self._respond, request)
+    d.addErrback(self._cancel_respond)
+    
+    # cancel localize deferred if the connection is lost before it fires
+    request.notifyFinish().addErrback(self._cancel_localize, d, request)
     
     return server.NOT_DONE_YET
   
@@ -51,6 +60,18 @@ class LocalizeResource(resource.Resource):
     request.setResponseCode(httplib.OK)
     request.write(json.dumps(loc))
     request.finish()
+    print "[" + str(time.time()) + "] " +\
+          request.getHost().host + " is localizaed as " + str(loc[0])
+
+
+  def _cancel_respond(self, err):
+    pass
+
+
+  def _cancel_localize(self, err, deferred, request):
+    deferred.cancel()
+    print "[" + str(time.time()) + "] " +\
+          request.getHost().host + " lost connection"
 
 
 class RootResource(resource.Resource):
