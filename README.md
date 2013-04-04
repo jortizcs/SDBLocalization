@@ -11,7 +11,7 @@ The -B is just to avoid generating .py[co] files on import.
 The server currently only support HTTP POST.
 Denote server's IP as SERVER_IP. Do HTTP POST to 
 
-    http://SERVER_IP/localize
+    http://SERVER_IP:10000/localize
 
 with JSON object:
 
@@ -35,7 +35,7 @@ The server will return the result location as string with format:
 
     "[[Building Name, [x, y, z]], Confidence]"
 
-in which Building Name is a string of building name. x, y, and z are corresponding decimal value of the coordinate, and Confidence is the decimal confidence value ranging in [0, 1]. The coordinate is determined as described in [this part](#-how-to-get-coordinate)
+in which Building Name is a string of building name. x, y, and z are corresponding decimal value of the coordinate, and Confidence is the decimal confidence value ranging in [0, 1]. The coordinate is determined as described in [this part](#how-to-get-coordinate)
 
 Examples can be found in 
 
