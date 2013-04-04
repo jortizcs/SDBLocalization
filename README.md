@@ -35,7 +35,7 @@ The server will return the result location as string with format:
 
     "[[Building Name, [x, y, z]], Confidence]"
 
-in which Building Name is a string of building name. x, y, and z are corresponding decimal value of the coordinate, and Confidence is the decimal confidence value ranging in [0, 1]. The coordinate is determined as described in [this part](#coordinate)
+in which Building Name is a string of building name. x, y, and z are corresponding decimal value of the coordinate, and Confidence is the decimal confidence value ranging in [0, 1]. The coordinate is determined as described in [this part](#-how-to-get-coordinate)
 
 Examples can be found in 
 
@@ -46,7 +46,7 @@ or
     ./mobile_audit/src/mobile/SFS/HybridLoc.java
 
 
-# <a id="coordinate"></a> How to get coordinate
+# How to get coordinate
 Open MATLAB, go to the root folder of this repository, run
 
     image = imread('./resources/maps/SDH/4th Floor_clean.png');
