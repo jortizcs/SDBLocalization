@@ -11,7 +11,7 @@ Copyright (c) 2013 UC Berkeley. All rights reserved.
 
 
 from twisted.enterprise import adbapi
-from twisted.internet import defer, task
+from twisted.internet import reactor, defer, task
 from twisted.python import log
 
 import os
@@ -27,7 +27,7 @@ class WifiLocService(object):
     self._wifitablename = 'wifi'
     self._db = db
     self._lc = task.LoopingCall(self._update_db)
-    self._lc.start(dbupdate_interval)
+    reactor.callLater(0, self._lc.start, dbupdate_interval)
   
   
   def localize(self, request):

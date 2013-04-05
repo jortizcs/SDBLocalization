@@ -19,7 +19,6 @@ from boss.hybridloc.service import HybridLocService
 from boss.hybridloc.loc.wifiloc.service import WifiLocService
 import json
 import httplib
-import time
 
 
 class LocalizeResource(resource.Resource):
@@ -41,8 +40,7 @@ class LocalizeResource(resource.Resource):
   
   def render_POST(self, request):
     """POST localization request"""
-    log.msg("[" + str(time.time()) +
-            "] Received request from " + request.getHost().host)
+    log.msg("Received request from " + request.getHost().host)
     
     request.setHeader('Content-type', 'application/json')
     # TODO handle bad request
@@ -61,8 +59,7 @@ class LocalizeResource(resource.Resource):
     request.setResponseCode(httplib.OK)
     request.write(json.dumps(loc))
     request.finish()
-    log.msg("[" + str(time.time()) + "] " +
-            request.getHost().host + " is localizaed as " + str(loc[0]))
+    log.msg(request.getHost().host + " is localizaed as " + str(loc[0]))
 
 
   def _cancel_respond(self, err):
@@ -71,8 +68,7 @@ class LocalizeResource(resource.Resource):
 
   def _cancel_localize(self, err, deferred, request):
     deferred.cancel()
-    log.msg("[" + str(time.time()) + "] " +
-            request.getHost().host + " lost connection")
+    log.msg(request.getHost().host + " lost connection")
 
 
 class RootResource(resource.Resource):
