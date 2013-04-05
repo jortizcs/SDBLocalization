@@ -12,6 +12,7 @@ Copyright (c) 2013 UC Berkeley. All rights reserved.
 
 from twisted.enterprise import adbapi
 from twisted.internet import defer, task
+from twisted.python import log
 
 import os
 import numpy
@@ -132,7 +133,7 @@ class WifiLocService(object):
   @defer.inlineCallbacks
   def _update_db(self):
     """Update WiFi RSSI fingerprint database."""
-    print "Updating database ..."
+    log.msg("Start updating database")
     operation = "CREATE TABLE IF NOT EXISTS " + self._wifitablename + \
                 " (timestamp text, building text, room text, object text, \
                    x real, y real, z real, signature text, \
@@ -161,7 +162,7 @@ class WifiLocService(object):
             yield self._db.runQuery(operation, sigrecord)
           except sqlite3.IntegrityError:
             pass
-    print "Done!"
+    log.msg("Database updated")
   
   
   def _get_sig_items_from_file(self, file, maxnum):

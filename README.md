@@ -3,9 +3,15 @@ SDBLocalization
 # How to run the server
 In terminal, go to ./server, and execute
 
-    python -B run.py
+    twistd -y run.tac
 
+. To kill the server, run
+
+    kill `cat twistd.pid`
+
+<!--
 The -B is just to avoid generating .py[co] files on import.
+-->
 
 # How to use server's RPC
 The server currently only support HTTP POST.
@@ -61,7 +67,7 @@ for Soda Hall 4th floor.
 
 In the opened dialog, Click the icon of "data cursor" in the Toolbar, and click on the map to get the X and Y of the point.
 
-# Which map are currently using in the server
+# Which maps are currently used in the server
 
     './resources/maps/SDH/4th Floor_clean.png'
 

@@ -8,3 +8,8 @@
 # Python Compiled Files#
 *.pyc
 *.pyo
+
+# Twisted Log Files #
+server/*.db
+server/*.log
+server/*.pid
