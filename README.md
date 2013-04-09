@@ -3,7 +3,7 @@ SDBLocalization
 # How to run the server
 In terminal, go to ./server, and execute
 
-    twistd -y run.tac
+    twistd -y boss.tac
 
 . To kill the server, run
 
@@ -17,7 +17,7 @@ The -B is just to avoid generating .py[co] files on import.
 The server currently only support HTTP POST.
 Denote server's IP as SERVER_IP. Do HTTP POST to 
 
-    http://SERVER_IP:10000/localize
+    http://SERVER_IP:10080/localize
 
 with JSON object:
 

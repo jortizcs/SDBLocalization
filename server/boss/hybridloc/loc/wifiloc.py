@@ -10,6 +10,7 @@ Copyright (c) 2013 UC Berkeley. All rights reserved.
 """
 
 
+from twisted.application import service
 from twisted.enterprise import adbapi
 from twisted.internet import reactor, defer, task
 from twisted.python import log
@@ -20,8 +21,8 @@ import collections
 import sqlite3
 
 
-class WifiLocService(object):
-  """WifiLoc service"""
+class WifiLoc(object):
+  """WifiLoc class"""
   
   def __init__(self, db, dbupdate_interval):
     self._wifitablename = 'wifi'
@@ -141,7 +142,7 @@ class WifiLocService(object):
     yield self._db.runQuery(operation)
     
     # TODO: update from phone rather than local files
-    directory = os.path.dirname(__file__) + '/tmpdata/'
+    directory = os.path.dirname(__file__) + '/tmpdata/wifiloc/'
     configfilename = directory + 'Config.csv'
     # use 'U' for universal newlines
     configfile = open(configfilename, 'rU')

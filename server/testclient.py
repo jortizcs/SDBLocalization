@@ -17,7 +17,7 @@ import threading
 
 def _test():
   HOST = '127.0.0.1'
-  PORT = 10000
+  PORT = 10080
   SERVICE = '/localize'
   URL = 'http://' + HOST + ':' + str(PORT) + SERVICE
   

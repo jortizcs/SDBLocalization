@@ -10,11 +10,16 @@ Copyright (c) 2013 UC Berkeley. All rights reserved.
 """
 
 
-class HybridLocService(object):
-  """HybridLoc service"""
+from twisted.application import service
+
+from boss.hybridloc.loc import wifiloc
+
+class HybridLoc(object):
+  """HybridLoc class"""
   
-  def __init__(self, wifiloc):
-    self._wifiloc = wifiloc
+  def __init__(self, db):
+    self._db = db
+    self._wifiloc = wifiloc.WifiLoc(self._db, dbupdate_interval = 3600)
   
   def localize(self, request):
     """Execute hybridLoc localization service, which fuses results of multiple 
@@ -27,9 +32,6 @@ class HybridLocService(object):
     return d
 
 
-def _test():
-  pass
-
-
-if __name__ == '__main__':
-  _test()
+  def _offload(self, loc, host):
+    """Offload datac from server to client for local calculation"""
+    pass
