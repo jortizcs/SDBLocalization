@@ -25,11 +25,11 @@ class BOSSService(service.Service):
   
   implements(IBOSSService)
   
-  def __init__(self, content = None, dbname = "boss.db"):
+  def __init__(self, dbname = "boss.db", content = ['localize', 'precache']):
     # TODO: add other services
-    self._content = content
     self._db = adbapi.ConnectionPool('sqlite3', database = dbname, 
-                                 check_same_thread=False)
+                                     check_same_thread=False)
+    self._content = content
     
     if 'localize' in self._content:
       self._loc = hybridloc.HybridLoc(self._db)
@@ -46,6 +46,16 @@ class BOSSService(service.Service):
       return d
     else:
       return defer.fail(NoLocalizerError())
+  
+  
+  def get_precache_data(self):
+    # Currently we assume only one user
+    precache_data = {}
+    if 'localize' in self._content:
+      precache_data['localize'] = self._loc.get_precache_data()
+    
+    return precache_data
+
 
 class NoLocalizerError(Exception):
   pass

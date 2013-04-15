@@ -26,3 +26,9 @@ class IBOSSService(Interface):
     """
     Return a deferred returning a tuple.
     """
+  
+  
+  def get_precache_data(request):
+    """
+    Return a dictionary.
+    """

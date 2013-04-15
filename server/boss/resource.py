@@ -12,8 +12,10 @@ Copyright (c) 2013 UC Berkeley. All rights reserved.
 
 from twisted.web import resource, server
 from twisted.python import log, components
+from twisted.internet import defer
 
-from boss.interface import IBOSSService
+from boss import interface as boss_iface
+from boss import service as boss_service
 
 import json
 import httplib
@@ -27,6 +29,8 @@ class BOSSResource(resource.Resource):
     self._service = service
     if 'localize' in self._service.content():
       self.putChild('localize', LocResource(self._service.localize))
+    if 'precache' in self._service.content():
+      self.putChild('precache', PrecacheResource(self._service.get_precache_data))
   
   
   def getChild(self, path, request):
@@ -40,7 +44,9 @@ class BOSSResource(resource.Resource):
     request.setHeader('Content-type', 'application/json')
     return json.dumps(self._service.content())
 
-components.registerAdapter(BOSSResource, IBOSSService, resource.IResource)
+components.registerAdapter(BOSSResource, 
+                           boss_iface.IBOSSService, 
+                           resource.IResource)
 
 
 class LocResource(resource.Resource):
@@ -49,6 +55,7 @@ class LocResource(resource.Resource):
   def __init__(self, localize):
     resource.Resource.__init__(self)
     self._localize = localize
+    
   
   
   def getChild(self, path, request):
@@ -79,17 +86,21 @@ class LocResource(resource.Resource):
     return server.NOT_DONE_YET
   
   
-  def _succeed(self, loc, request):
+  def _succeed(self, (loc, confidence), request):
     request.setResponseCode(httplib.OK)
-    request.write(json.dumps(loc))
+    request.write(json.dumps((loc, confidence)))
     request.finish()
-    log.msg(request.getHost().host + " is localizaed as " + str(loc[0]))
+    log.msg(request.getHost().host + " is localizaed as " + str(loc) 
+            + " with confidence " + str(confidence))
 
 
   def _fail(self, err):
     if err.check(defer.CancelledError):
       log.msg(request.getHost().host + " localization canceled")
-    elif err.check(server.NoLocalizerError):
+    elif err.check(boss_service.NoLocalizerError):
+      request.setResponseCode(httplib.BAD_REQUEST)
+      request.write("Server error: No Localizer")
+      request.finish()
       log.msg(request.getHost().host + " localization failed")
     else:
       pass
@@ -98,3 +109,24 @@ class LocResource(resource.Resource):
   def _cancel_localize(self, err, deferred, request):
     deferred.cancel()
     log.msg(request.getHost().host + " lost connection")
+
+
+class PrecacheResource(resource.Resource):
+  """BOSS Localize precache web-accessible resource"""
+
+  def __init__(self, get_precache_data):
+    resource.Resource.__init__(self)
+    self._get_precache_data = get_precache_data
+
+
+  def getChild(self, path, request):
+    if name == '':
+      return self
+    else:
+      return resource.Resource.getChild(self, path, request)
+
+
+  def render_GET(self, request):
+    request.setResponseCode(httplib.OK)
+    request.setHeader('Content-type', 'application/json')
+    return json.dumps(self._get_precache_data())

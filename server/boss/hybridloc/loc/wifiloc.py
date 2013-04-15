@@ -29,6 +29,9 @@ class WifiLoc(object):
     self._db = db
     self._lc = task.LoopingCall(self._update_db)
     reactor.callLater(0, self._lc.start, dbupdate_interval)
+    
+    self._precache_data = []
+    self.interim = 100
   
   
   def localize(self, request):
@@ -74,6 +77,9 @@ class WifiLoc(object):
     locs, _ = distitems
     (building, (x, y, z)) = self._get_coordinate(locs)
     confidence = self._get_confidence(locs, sigstr)
+    
+    # precache
+    reactor.callLater(0, self._precache, (building, (x, y, z)))
     
     return ((building, (x, y, z)), confidence)
   
@@ -129,6 +135,64 @@ class WifiLoc(object):
     coordinates = zip(*locs)[1]
     coordinate = tuple([sum(x)/len(x) for x in zip(*coordinates)])
     return (building, coordinate)
+  
+  
+  def _precache(self, loc):
+    #Put data in local variable
+    (near, area_ids) = self._near_grey_area(loc)
+    if near == True:
+      self._append_precache_data(loc[0], area_ids)
+
+
+  def _near_grey_area(self, loc):
+    (building, (x, y, z)) = loc
+    area_ids = []
+    if building == "SODA":
+      if x > 655-self.interim and y < 342+self.interim:
+        area_ids.append(1)
+      if 854+self.interim > x > 500-self.interim and 998+self.interim > y > 898-self.interim:
+        area_ids.append(2)
+      if 456+self.interim > x and y > 1154-self.interim:
+        area_ids.append(3)
+      
+    if area_ids != []:
+      return (True, area_ids)
+    else:
+      return (False, None)
+  
+  
+  @defer.inlineCallbacks
+  def _append_precache_data(self, building, area_ids):
+    operation = "SELECT * FROM " + self._wifitablename
+    d = self._db.runQuery(operation)
+    dbsigrecords = yield d
+    
+    #distitem format: ((building, (x, y, z)), signature distance)
+    distitems = []
+    #sigrecord format: (timestamp, building, room, object, x, y, z, signature)
+    for dbsigrecord in dbsigrecords:
+      dbbuilding = dbsigrecord[1]
+      if building == dbbuilding:
+        dbx = dbsigrecord[4]
+        dby = dbsigrecord[5]
+        if (1 in area_ids) \
+           and dbx > 655-self.interim \
+           and dby < 342+self.interim:
+          self._precache_data.append(dbsigrecord)
+        if (2 in area_ids) \
+           and 854+self.interim > dbx > 500-self.interim \
+           and 998+self.interim > dby > 898-self.interim:
+          self._precache_data.append(dbsigrecord)
+        if (3 in area_ids) \
+           and 456+self.interim > dbx \
+           and dby > 1154-self.interim:
+          self._precache_data.append(dbsigrecord)
+    self._precache_data = list(set(self._precache_data))
+  
+  
+  def get_precache_data(self):
+    ret_data, self._precache_data = self._precache_data, []
+    return ret_data
   
   
   @defer.inlineCallbacks
@@ -204,12 +268,3 @@ class WifiLoc(object):
             pass
           currecord = nextrecord
     return sigitems
-
-
-def _test():
-  pass
-
-
-if __name__ == '__main__':
-  _test()
-
