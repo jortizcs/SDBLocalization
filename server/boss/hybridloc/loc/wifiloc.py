@@ -132,7 +132,7 @@ class WifiLoc(object):
     Return tuple (building, (x, y, z))"""
     buildings = zip(*locs)[0]
     building = collections.Counter(buildings).most_common(1)[0][0]
-    coordinates = zip(*locs)[1]
+    coordinates = [x[1] for x in locs if x[0] == building]
     coordinate = tuple([sum(x)/len(x) for x in zip(*coordinates)])
     return (building, coordinate)
   
