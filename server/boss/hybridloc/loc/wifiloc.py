@@ -31,7 +31,7 @@ class WifiLoc(object):
     reactor.callLater(0, self._lc.start, dbupdate_interval)
     
     self._precache_data = []
-    self.interim = 100
+    self.interim = 150
   
   
   def localize(self, request):
