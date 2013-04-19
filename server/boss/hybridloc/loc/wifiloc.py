@@ -30,7 +30,7 @@ class WifiLoc(object):
     self._lc = task.LoopingCall(self._update_db)
     reactor.callLater(0, self._lc.start, dbupdate_interval)
     
-    self._precache_data = []
+    self._precache_data = [[],[]]
     self.interim = 150
   
   
@@ -178,20 +178,23 @@ class WifiLoc(object):
         if (1 in area_ids) \
            and dbx > 655-self.interim \
            and dby < 342+self.interim:
-          self._precache_data.append(dbsigrecord)
+          self._precache_data[1].append(dbsigrecord)
         if (2 in area_ids) \
            and 854+self.interim > dbx > 500-self.interim \
            and 998+self.interim > dby > 898-self.interim:
-          self._precache_data.append(dbsigrecord)
+          self._precache_data[1].append(dbsigrecord)
         if (3 in area_ids) \
            and 456+self.interim > dbx \
            and dby > 1154-self.interim:
-          self._precache_data.append(dbsigrecord)
-    self._precache_data = list(set(self._precache_data))
+          self._precache_data[1].append(dbsigrecord)
+    self._precache_data[1] = list(set(self._precache_data[1]))
+    
+    self._precache_data[0].extend(area_ids)
+    self._precache_data[0] = list(set(self._precache_data[0]))
   
   
   def get_precache_data(self):
-    ret_data, self._precache_data = self._precache_data, []
+    ret_data, self._precache_data = self._precache_data, [[],[]]
     return ret_data
   
   
