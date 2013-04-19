@@ -148,11 +148,11 @@ class WifiLoc(object):
     (building, (x, y, z)) = loc
     area_ids = []
     if building == "SODA":
-      if x > 655-self.interim and y < 342+self.interim:
+      if x > 655-250 and y < 342+self.interim:
         area_ids.append(1)
-      if 854+self.interim > x > 500-self.interim and 998+self.interim > y > 898-self.interim:
+      if 854+self.interim > x > 500-250 and 998+self.interim > y > 898-self.interim:
         area_ids.append(2)
-      if 456+self.interim > x and y > 1154-self.interim:
+      if 456+250 > x and y > 1154-250:
         area_ids.append(3)
       
     if area_ids != []:
@@ -176,16 +176,16 @@ class WifiLoc(object):
         dbx = dbsigrecord[4]
         dby = dbsigrecord[5]
         if (1 in area_ids) \
-           and dbx > 655-self.interim \
+           and dbx > 655-250 \
            and dby < 342+self.interim:
           self._precache_data[1].append(dbsigrecord)
         if (2 in area_ids) \
-           and 854+self.interim > dbx > 500-self.interim \
+           and 854+self.interim > dbx > 500-250 \
            and 998+self.interim > dby > 898-self.interim:
           self._precache_data[1].append(dbsigrecord)
         if (3 in area_ids) \
-           and 456+self.interim > dbx \
-           and dby > 1154-self.interim:
+           and 456+250 > dbx \
+           and dby > 1154-250:
           self._precache_data[1].append(dbsigrecord)
     self._precache_data[1] = list(set(self._precache_data[1]))
     
